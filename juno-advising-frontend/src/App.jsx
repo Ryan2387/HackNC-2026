@@ -1,32 +1,74 @@
 import { useState } from 'react';
-import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { LayoutDashboard, ChartNoAxesCombined, Sparkles, ReceiptText, Settings, Wallet, ArrowUpRight, ArrowDownRight, Bell, Search, Menu, X, Send, ShieldCheck, CalendarDays, ChevronRight, CircleHelp, SlidersHorizontal, TrendingUp, AlertTriangle, CheckCircle2, DollarSign, Plus, Bot, Leaf } from 'lucide-react';
+import { TrendingUp, X, Leaf, Settings, Menu, ChevronRight, Bell, Sparkles } from 'lucide-react';
+import { nav } from './data/navigation';
+import Overview from './pages/Overview';
+import Forecast from './pages/Forecast';
+import Copilot from './pages/Copilot';
+import Activity from './pages/Activity';
 
-// Demo values: replace with your Express /api/dashboard and /api/forecast responses.
-const DEMO = {
-  name: 'Alex', balance: 2840.50, income: 3200, spent: 1480.20, safeToSpend: 680,
-  transactions: [
-    {id:1,merchant:'Whole Foods Market',category:'Groceries',date:'Oct 9, 2026',amount:-68.42,icon:'🥑'},
-    {id:2,merchant:'Paycheck',category:'Income',date:'Oct 8, 2026',amount:1600,icon:'💼'},
-    {id:3,merchant:'Spotify Premium',category:'Subscriptions',date:'Oct 7, 2026',amount:-11.99,icon:'🎵'},
-    {id:4,merchant:'Shell',category:'Transportation',date:'Oct 6, 2026',amount:-42.80,icon:'⛽'},
-    {id:5,merchant:'Chipotle',category:'Dining',date:'Oct 5, 2026',amount:-15.75,icon:'🌯'},
-  ],
-  bills:[{name:'Rent',due:'Oct 15',amount:950},{name:'Internet',due:'Oct 19',amount:65},{name:'Electricity',due:'Oct 22',amount:84}],
-  spending:[{name:'Housing',value:950,color:'#587df6'},{name:'Food',value:230,color:'#47d4bc'},{name:'Transport',value:155,color:'#f6ba65'},{name:'Other',value:145,color:'#a98bfa'}],
-  forecast:[{day:'Today',balance:2841},{day:'Oct 13',balance:2720},{day:'Oct 16',balance:1740},{day:'Oct 19',balance:1675},{day:'Oct 22',balance:1591},{day:'Oct 26',balance:3050},{day:'Oct 30',balance:2810}],
-};
-const money = (n) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
-const nav = [{id:'dashboard',name:'Overview',icon:LayoutDashboard},{id:'forecast',name:'Forecast',icon:ChartNoAxesCombined},{id:'copilot',name:'AI Copilot',icon:Sparkles},{id:'transactions',name:'Transactions',icon:ReceiptText}];
-function Card({children,className=''}){return <div className={'card '+className}>{children}</div>}
-function Stat({label,value,detail,icon:Icon,positive=false}){return <Card className="stat"><div className="stat-top"><span>{label}</span><span className="icon-tile"><Icon size={18}/></span></div><strong>{value}</strong><small className={positive?'green':''}>{detail}</small></Card>}
-function ForecastChart({purchase=0}){const data=DEMO.forecast.map((p,i)=>({...p, balance:Math.max(0,p.balance-(i>0?purchase:0))}));return <div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data} margin={{top:10,right:5,left:-14,bottom:0}}><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#55d4b8" stopOpacity={.24}/><stop offset="100%" stopColor="#55d4b8" stopOpacity={0}/></linearGradient></defs><CartesianGrid stroke="#25344a" strokeDasharray="4 5" vertical={false}/><XAxis dataKey="day" tickLine={false} axisLine={false} tick={{fill:'#8c9ab0',fontSize:11}}/><YAxis tickLine={false} axisLine={false} tick={{fill:'#8c9ab0',fontSize:11}} tickFormatter={v=>'$'+(v/1000).toFixed(1)+'k'}/><Tooltip contentStyle={{background:'#152237',border:'1px solid #34455d',borderRadius:12,color:'#fff'}} formatter={v=>money(v)}/><Area type="monotone" dataKey="balance" name="Projected balance" stroke="#59d9bd" strokeWidth={3} fill="url(#chartFill)"/></AreaChart></ResponsiveContainer></div>}
-function Transactions({full=false}){return <Card><div className="section-heading"><div><h3>Recent transactions</h3><p>Your latest account activity</p></div>{!full&&<span className="muted tiny">Sample data</span>}</div><div className="transaction-list">{DEMO.transactions.map(t=><div className="transaction" key={t.id}><div className="merchant-icon">{t.icon}</div><div className="transaction-name"><strong>{t.merchant}</strong><span>{t.category} · {t.date}</span></div><strong className={t.amount>0?'green':''}>{t.amount>0?'+':''}{money(t.amount)}</strong></div>)}</div></Card>}
-function Simulator(){const [amount,setAmount]=useState(250);const [buffer,setBuffer]=useState(500);const base=DEMO.forecast.at(-1).balance;const lowest=Math.min(...DEMO.forecast.slice(1).map(p=>p.balance))-amount;const safe=lowest>=buffer;return <Card className="sim-card"><div className="section-heading"><div><div className="eyebrow">WHAT-IF SIMULATOR</div><h3>Can I afford this?</h3><p>See how a purchase changes your future balance.</p></div><span className="icon-tile mint"><SlidersHorizontal size={19}/></span></div><div className="field-label"><label htmlFor="amount">Purchase amount</label><strong>{money(amount)}</strong></div><input id="amount" type="range" min="0" max="1200" step="25" value={amount} onChange={e=>setAmount(Number(e.target.value))}/><div className="range-ends"><span>$0</span><span>$1,200</span></div><div className="field-label"><label htmlFor="buffer">Minimum safety cushion</label><strong>{money(buffer)}</strong></div><input id="buffer" type="range" min="0" max="1000" step="50" value={buffer} onChange={e=>setBuffer(Number(e.target.value))}/><div className="sim-result"><div className={'status-icon '+(safe?'safe':'risk')}>{safe?<CheckCircle2 size={20}/>:<AlertTriangle size={20}/>}</div><div><strong>{safe?'Looks manageable':'Consider waiting'}</strong><p>Your lowest projected balance would be <b>{money(lowest)}</b>. {safe?'It stays above your selected cushion.':'It falls below your selected cushion.'}</p></div></div><small className="muted">Illustrative estimate. Does not account for all possible expenses.</small></Card>}
-function Bills(){return <Card><div className="section-heading"><div><h3>Upcoming bills</h3><p>Keep important payments in sight</p></div><CalendarDays size={19} className="muted"/></div>{DEMO.bills.map(b=><div className="bill" key={b.name}><div className="bill-icon"><CalendarDays size={17}/></div><div><strong>{b.name}</strong><span>{b.due}</span></div><strong>{money(b.amount)}</strong></div>)}</Card>}
-function Overview({go}){return <><div className="welcome"><div><div className="eyebrow">SATURDAY, OCTOBER 10, 2026</div><h1>Good afternoon, {DEMO.name} <span className="wave">✳</span></h1><p>Here's where your money stands — and where it's headed.</p></div><button className="primary-button" onClick={()=>go('copilot')}><Sparkles size={17}/> Ask Juno Advising</button></div><div className="stats-grid"><Stat label="Total balance" value={money(DEMO.balance)} detail="Across your linked demo accounts" icon={Wallet}/><Stat label="Safe to spend" value={money(DEMO.safeToSpend)} detail="After planned expenses" icon={ShieldCheck} positive/><Stat label="Monthly income" value={money(DEMO.income)} detail="Estimated this month" icon={ArrowDownRight} positive/><Stat label="Monthly spending" value={money(DEMO.spent)} detail="Spent so far this month" icon={ArrowUpRight}/></div><div className="main-grid"><Card className="forecast-card"><div className="section-heading"><div><h3>Balance forecast</h3><p>Where your money could be over the next 30 days</p></div><button className="text-button" onClick={()=>go('forecast')}>Explore <ChevronRight size={16}/></button></div><ForecastChart/></Card><Simulator/></div><div className="bottom-grid"><Transactions/><Bills/></div></>}
-function Forecast(){return <><div className="welcome"><div><div className="eyebrow">LOOK FORWARD</div><h1>Your financial forecast</h1><p>See upcoming changes and test your decisions.</p></div></div><div className="main-grid"><Card className="forecast-card"><div className="section-heading"><div><h3>30-day projection</h3><p>Estimated using scheduled sample transactions</p></div><span className="pill">Next 30 days</span></div><ForecastChart/><div className="forecast-notes"><span><span className="dot mint-dot"/> Estimated balance</span><span><AlertTriangle size={14}/> Forecasts are estimates</span></div></Card><Simulator/></div><div className="bottom-grid"><Bills/><Card><h3>How forecasts work</h3><p className="body-copy">Juno Advising combines your current balance with known upcoming bills and estimated spending. For the real application, your Express backend will calculate the forecast from Nessie data. Gemini can explain the results but should not invent numbers.</p><div className="hint"><ShieldCheck size={19}/> Your financial calculations stay consistent across web and iMessage.</div></Card></div></>}
-function Copilot(){const [messages,setMessages]=useState([{role:'assistant',text:"Hey Alex! I'm Juno Advising, your financial copilot. Ask me about your spending, upcoming bills, or whether a purchase fits your budget."}]);const [draft,setDraft]=useState('');const [loading,setLoading]=useState(false);async function send(message=draft){const text=message.trim();if(!text||loading)return;setMessages(m=>[...m,{role:'user',text}]);setDraft('');setLoading(true);try{const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});if(!res.ok)throw new Error('Backend not connected');const data=await res.json();setMessages(m=>[...m,{role:'assistant',text:data.reply||data.message||'No response returned.'}]);}catch{setMessages(m=>[...m,{role:'assistant',text:'Demo mode: Connect your Express backend at POST /api/chat to get personalized answers from Gemini using Nessie data. Your demo balance is '+money(DEMO.balance)+'.'}]);}finally{setLoading(false)}}return <><div className="welcome"><div><div className="eyebrow">YOUR MONEY, MADE CLEAR</div><h1>Meet your financial copilot <span className="wave">✳</span></h1><p>Ask a question. Make a more informed decision.</p></div></div><div className="chat-layout"><Card className="chat-card"><div className="chat-head"><div className="bot-avatar"><Sparkles size={22}/></div><div><strong>Juno Advising AI</strong><span>Financial copilot · Demo mode</span></div><span className="online-dot"/></div><div className="chat-messages" aria-live="polite">{messages.map((m,i)=><div className={'bubble '+m.role} key={i}>{m.role==='assistant'&&<Sparkles size={16}/>}<span>{m.text}</span></div>)}{loading&&<div className="bubble assistant">Thinking…</div>}</div><form className="chat-form" onSubmit={e=>{e.preventDefault();send()}}><input aria-label="Ask Juno Advising" placeholder="Ask about your finances…" value={draft} onChange={e=>setDraft(e.target.value)}/><button type="submit" disabled={!draft.trim()||loading} aria-label="Send message"><Send size={19}/></button></form></Card><div className="prompt-panel"><h3>Try asking</h3><p>Explore what Juno Advising could help with.</p>{['Can I afford a $300 purchase?','What bills are coming up?','How much can I safely spend?','Where is my money going?'].map(q=><button className="prompt" key={q} onClick={()=>send(q)}><Sparkles size={16}/>{q}<ChevronRight size={15}/></button>)}<div className="hint"><ShieldCheck size={19}/> Juno Advising provides educational estimates, not professional financial advice.</div></div></div></>}
-function Spending(){return <Card><div className="section-heading"><div><h3>Spending breakdown</h3><p>Illustrative category totals</p></div></div><div className="spending-wrap"><div className="donut"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={DEMO.spending} dataKey="value" innerRadius={60} outerRadius={88} paddingAngle={4} stroke="none">{DEMO.spending.map(x=><Cell key={x.name} fill={x.color}/>)}</Pie><Tooltip formatter={v=>money(v)} contentStyle={{background:'#152237',border:'1px solid #34455d',borderRadius:12,color:'#fff'}}/></PieChart></ResponsiveContainer></div><div className="legend">{DEMO.spending.map(x=><div key={x.name}><span><i style={{background:x.color}}/>{x.name}</span><strong>{money(x.value)}</strong></div>)}</div></div></Card>}
-function Activity(){return <><div className="welcome"><div><div className="eyebrow">FOLLOW YOUR FLOW</div><h1>Spending & transactions</h1><p>Understand the habits behind your financial future.</p></div></div><div className="bottom-grid"><Transactions full/><Spending/></div></>}
-export default function App(){const [page,setPage]=useState('dashboard');const [mobile,setMobile]=useState(false);const [notice,setNotice]=useState(false);function go(p){setPage(p);setMobile(false);window.scrollTo({top:0,behavior:'smooth'})}return <div className="app-shell"><aside className={'sidebar '+(mobile?'open':'')}><div className="brand"><div className="brand-mark"><TrendingUp size={22}/></div><span>Juno<span className="brand-period">.</span></span><button className="mobile-close" onClick={()=>setMobile(false)} aria-label="Close menu"><X size={20}/></button></div><div className="sidebar-label">WORKSPACE</div><nav>{nav.map(n=><button key={n.id} className={'nav-link '+(page===n.id?'active':'')} onClick={()=>go(n.id)}><n.icon size={19}/>{n.name}{page===n.id&&<span className="nav-indicator"/>}</button>)}</nav><div className="sidebar-bottom"><div className="sidebar-tip"><div className="tip-icon"><Leaf size={18}/></div><strong>Make money make sense.</strong><p>Small decisions today create a brighter tomorrow.</p></div><div className="demo-user"><div className="avatar">A</div><div><strong>Alex Morgan</strong><span>Demo account</span></div><Settings size={17}/></div></div></aside>{mobile&&<div className="mobile-overlay" onClick={()=>setMobile(false)}/>}<main className="main"><header className="topbar"><button className="hamburger" aria-label="Open menu" onClick={()=>setMobile(true)}><Menu size={22}/></button><div className="breadcrumbs">Workspace <ChevronRight size={14}/> <strong>{nav.find(n=>n.id===page)?.name}</strong></div><div className="top-actions"><span className="demo-pill"><span/> DEMO DATA</span><button aria-label="Notifications" className="icon-button" onClick={()=>setNotice(!notice)}><Bell size={19}/></button><div className="avatar small">A</div></div>{notice&&<div className="notification-pop"><strong>You're all caught up</strong><p>Alerts will appear here once connected to the backend.</p></div>}</header><div className="content">{page==='dashboard'?<Overview go={go}/>:page==='forecast'?<Forecast/>:page==='copilot'?<Copilot/>:<Activity/>}<footer><span>© 2026 Juno Advising · HackNC prototype</span><span>Powered by smarter decisions <Sparkles size={13}/></span></footer></div></main></div>}
+export default function App() {
+  const [page, setPage] = useState('dashboard');
+  const [mobile, setMobile] = useState(false);
+  const [notice, setNotice] = useState(false);
+  function go(p) { setPage(p); setMobile(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  return (
+  <div className="app-shell">
+    <aside className={'sidebar ' + (mobile ? 'open' : '')}>
+      <div className="brand">
+        <div className="brand-mark">
+          <TrendingUp size={22} />
+        </div>
+        <span>Juno<span className="brand-period">.</span>
+        </span>
+        <button className="mobile-close" onClick={() => setMobile(false)} aria-label="Close menu">
+          <X size={20} />
+        </button>
+      </div>
+      <div className="sidebar-label">WORKSPACE</div>
+      <nav>{nav.map(n => <button key={n.id} className={'nav-link ' + (page === n.id ? 'active' : '')} onClick={() => go(n.id)}>
+        <n.icon size={19} />{n.name}{page === n.id && <span className="nav-indicator" />}</button>)}</nav>
+      <div className="sidebar-bottom">
+        <div className="sidebar-tip">
+          <div className="tip-icon">
+            <Leaf size={18} />
+          </div>
+          <strong>Make money make sense.</strong>
+          <p>Small decisions today create a brighter tomorrow.</p>
+        </div>
+        <div className="demo-user">
+          <div className="avatar">A</div>
+          <div>
+            <strong>Alex Morgan</strong>
+            <span>Demo account</span>
+          </div>
+          <Settings size={17} />
+        </div>
+      </div>
+    </aside>{mobile && <div className="mobile-overlay" onClick={() => setMobile(false)} />}<main className="main">
+      <header className="topbar">
+        <button className="hamburger" aria-label="Open menu" onClick={() => setMobile(true)}>
+          <Menu size={22} />
+        </button>
+        <div className="breadcrumbs">Workspace <ChevronRight size={14} /> <strong>{nav.find(n => n.id === page)?.name}</strong>
+        </div>
+        <div className="top-actions">
+          <span className="demo-pill">
+            <span /> DEMO DATA</span>
+          <button aria-label="Notifications" className="icon-button" onClick={() => setNotice(!notice)}>
+            <Bell size={19} />
+          </button>
+          <div className="avatar small">A</div>
+        </div>{notice && <div className="notification-pop">
+          <strong>You're all caught up</strong>
+          <p>Alerts will appear here once connected to the backend.</p>
+        </div>}</header>
+      <div className="content">{page === 'dashboard' ? <Overview go={go} /> : page === 'forecast' ? <Forecast /> : page === 'copilot' ? <Copilot /> : <Activity />}<footer>
+        <span>© 2026 Juno Advising · HackNC prototype</span>
+        <span>Powered by smarter decisions <Sparkles size={13} />
+        </span>
+      </footer>
+      </div>
+    </main>
+  </div>
+  );
+}
